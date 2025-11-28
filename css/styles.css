@@ -76,11 +76,12 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  transition: transform 0.3s ease-in-out;
+  will-change: transform;
 }
 
 .hourly-forecast-container .hour-weather-item:hover {
   transform: scale(1.1);
-  transition: 0.3s ease-in-out;
 }
 
 .hourly-forecast-container .hour-weather-item > img {
@@ -119,6 +120,8 @@ body {
   background-color: white;
   border-radius: 40px;
   padding: 30px;
+  transition: transform 0.3s ease-in-out;
+  will-change: transform;
 }
 
 .weather-details-container .weather-detail-item > p:first-child {
@@ -130,6 +133,12 @@ body {
   align-items: center;
 }
 
+.weather-details-container .weather-detail-item > div > p {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #2a394f;
+  margin-left: 4px;
+}
 .weather-details-container .weather-detail-item > div > p > span {
   font-size: 0.75rem;
   margin-left: -5px;
@@ -139,17 +148,8 @@ body {
   height: 35px;
   width: 35px;
 }
-
-.weather-details-container .weather-detail-item > div > p {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #2a394f;
-  margin-left: 4px;
-}
-
 .weather-details-container .weather-detail-item:hover {
   transform: scale(1.1);
-  transition: 0.3s ease-in-out;
 }
 
 /* Previsao Semanal */
@@ -182,6 +182,7 @@ body {
 .weekly-forecast-container .day-weather-item > div {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
 }
 .weekly-forecast-container .day-weather-item > div > p:first-child {
   font-weight: 500;
@@ -193,6 +194,7 @@ body {
   font-weight: 500;
   color: #8f8f8f;
 }
+
 .weekly-forecast-container .day-weather-item > img {
   height: 60px;
   width: 60px;
