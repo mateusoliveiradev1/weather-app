@@ -30,6 +30,35 @@ body {
   margin-right: 20px;
 }
 
+/* Showcase */
+.showcase-cantainer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 40px;
+  padding-right: 40px;
+  margin-top: 60px;
+}
+
+.showcase-cantainer .showcase-text > h2:first-child {
+  font-size: 3.125rem;
+  font-weight: 700;
+  color: #2a394f;
+}
+
+.showcase-cantainer .showcase-text > h2:last-child {
+  font-size: 5.313rem;
+  font-weight: 700;
+  color: #2a394f;
+}
+
+.showcase-cantainer .showcase-text > p {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #9aa0a8;
+  margin-bottom: 15px;
+}
+
 /* Utility classes */
 .custom-input {
   border: none;
