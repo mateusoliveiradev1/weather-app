@@ -19,6 +19,7 @@ body {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   padding: 40px;
+  grid-gap: 100px;
 }
 
 .navbar-container {
@@ -77,6 +78,11 @@ body {
   align-items: center;
 }
 
+.hourly-forecast-container .hour-weather-item:hover {
+  transform: scale(1.1);
+  transition: 0.3s ease-in-out;
+}
+
 .hourly-forecast-container .hour-weather-item > img {
   height: 70px;
   height: 70px;
@@ -97,14 +103,14 @@ body {
 
 /* Previsao Detalhada */
 
-.wheater-details-container {
+.weather-details-container {
   margin-top: 40px;
   display: grid;
   grid-template-columns: repeat(4, 220px);
   grid-gap: 15px;
 }
 
-.wheater-details-container .wheater-detail-item {
+.weather-details-container .weather-detail-item {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -115,30 +121,81 @@ body {
   padding: 30px;
 }
 
-.wheater-details-container .wheater-detail-item > p:first-child {
+.weather-details-container .weather-detail-item > p:first-child {
   color: #8f8f8f;
 }
 
-.wheater-details-container .wheater-detail-item > div {
+.weather-details-container .weather-detail-item > div {
   display: flex;
   align-items: center;
 }
 
-.wheater-details-container .wheater-detail-item > div > p > span {
+.weather-details-container .weather-detail-item > div > p > span {
   font-size: 0.75rem;
   margin-left: -5px;
 }
 
-.wheater-details-container .wheater-detail-item > div > img {
+.weather-details-container .weather-detail-item > div > img {
   height: 35px;
   width: 35px;
 }
 
-.wheater-details-container .wheater-detail-item > div > p {
+.weather-details-container .weather-detail-item > div > p {
   font-size: 2.5rem;
   font-weight: 700;
   color: #2a394f;
   margin-left: 4px;
+}
+
+.weather-details-container .weather-detail-item:hover {
+  transform: scale(1.1);
+  transition: 0.3s ease-in-out;
+}
+
+/* Previsao Semanal */
+.weekly-forecast-container {
+  background: #fff;
+  border-radius: 40px;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.weekly-forecast-container .day-weather-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.weekly-forecast-container .day-weather-item > p,
+.weekly-forecast-container .day-weather-item > img,
+.weekly-forecast-container .day-weather-item > div {
+  flex: 1;
+}
+
+.weekly-forecast-container .day-weather-item > p {
+  font-weight: 500;
+  color: #8f8f8f;
+}
+
+.weekly-forecast-container .day-weather-item > div {
+  display: flex;
+  align-items: center;
+}
+.weekly-forecast-container .day-weather-item > div > p:first-child {
+  font-weight: 500;
+  color: #2a394f;
+  margin-right: 8px;
+}
+
+.weekly-forecast-container .day-weather-item > div > p:last-child {
+  font-weight: 500;
+  color: #8f8f8f;
+}
+.weekly-forecast-container .day-weather-item > img {
+  height: 60px;
+  width: 60px;
 }
 
 /* Utility classes */
