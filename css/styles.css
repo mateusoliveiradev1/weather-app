@@ -95,6 +95,52 @@ body {
   font-size: 2rem;
 }
 
+/* Previsao Detalhada */
+
+.wheater-details-container {
+  margin-top: 40px;
+  display: grid;
+  grid-template-columns: repeat(4, 220px);
+  grid-gap: 15px;
+}
+
+.wheater-details-container .wheater-detail-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background-color: white;
+  border-radius: 40px;
+  padding: 30px;
+}
+
+.wheater-details-container .wheater-detail-item > p:first-child {
+  color: #8f8f8f;
+}
+
+.wheater-details-container .wheater-detail-item > div {
+  display: flex;
+  align-items: center;
+}
+
+.wheater-details-container .wheater-detail-item > div > p > span {
+  font-size: 0.75rem;
+  margin-left: -5px;
+}
+
+.wheater-details-container .wheater-detail-item > div > img {
+  height: 35px;
+  width: 35px;
+}
+
+.wheater-details-container .wheater-detail-item > div > p {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #2a394f;
+  margin-left: 4px;
+}
+
 /* Utility classes */
 .custom-input {
   border: none;
