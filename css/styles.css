@@ -175,6 +175,7 @@ body {
   position: relative;
   border-radius: 24px;
   padding: 8px 12px;
+  overflow: hidden;
 }
 
 .weekly-forecast-container .day-weather-item > p,
@@ -246,6 +247,9 @@ body {
 
 .day-weather-item.open {
   background: #f3f7fb;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
 }
 .day-weather-item.hot-day {
   outline: 2px solid #ff8266;
