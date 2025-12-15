@@ -46,7 +46,7 @@ async function geocodeCity(name) {
 }
 
 async function fetchWeather(lat, lon) {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,precipitation,wind_speed_10m&hourly=temperature_2m,precipitation_probability&daily=temperature_2m_max,temperature_2m_min,uv_index_max,precipitation_sum&timezone=auto&windspeed_unit=kmh`;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,precipitation,wind_speed_10m&hourly=temperature_2m,precipitation_probability,relative_humidity_2m&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,uv_index_max,precipitation_sum,sunrise,sunset&timezone=auto&windspeed_unit=kmh`;
   const res = await fetch(url);
   if (!res.ok) throw new Error("Falha ao buscar clima");
   return res.json();
@@ -106,17 +106,17 @@ function renderHourly(weather) {
 function renderWeekly(weather) {
   const daily = weather.daily;
   weeklyContainer.innerHTML = "";
+  const spark = document.createElement("div");
+  spark.className = "sparkline";
+  weeklyContainer.appendChild(spark);
+  const maxes = [];
   for (let i = 0; i < daily.time.length && i < 7; i++) {
     const dayEl = document.createElement("div");
     dayEl.className = "day-weather-item";
     const nameEl = document.createElement("p");
     nameEl.textContent = weekdayName(daily.time[i]);
     const iconEl = document.createElement("img");
-    const p =
-      daily.precipitation_sum && daily.precipitation_sum[i]
-        ? daily.precipitation_sum[i]
-        : 0;
-    const probApprox = p >= 10 ? 80 : p >= 3 ? 60 : p >= 1 ? 30 : 0;
+    const probApprox = computeDailyProbability(weather, i);
     iconEl.src = iconFor(probApprox, 12);
     iconEl.alt = "Condição";
     const tempsEl = document.createElement("div");
@@ -124,12 +124,64 @@ function renderWeekly(weather) {
     maxEl.textContent = temp(daily.temperature_2m_max[i]);
     const minEl = document.createElement("p");
     minEl.textContent = temp(daily.temperature_2m_min[i]);
+    const badge = document.createElement("span");
+    badge.className = "prob-badge";
+    badge.textContent = `${probApprox}%`;
     tempsEl.appendChild(maxEl);
     tempsEl.appendChild(minEl);
     dayEl.appendChild(nameEl);
     dayEl.appendChild(iconEl);
     dayEl.appendChild(tempsEl);
+    dayEl.appendChild(badge);
+    const detail = document.createElement("div");
+    detail.className = "day-detail";
+    const uv = Array.isArray(daily.uv_index_max) ? daily.uv_index_max[i] : null;
+    const pSum = Array.isArray(daily.precipitation_sum)
+      ? daily.precipitation_sum[i]
+      : 0;
+    const apMax = Array.isArray(daily.apparent_temperature_max)
+      ? daily.apparent_temperature_max[i]
+      : null;
+    const apMin = Array.isArray(daily.apparent_temperature_min)
+      ? daily.apparent_temperature_min[i]
+      : null;
+    const apMean =
+      apMax != null && apMin != null ? round((apMax + apMin) / 2) : null;
+    const sr = Array.isArray(daily.sunrise) ? daily.sunrise[i] : null;
+    const ss = Array.isArray(daily.sunset) ? daily.sunset[i] : null;
+    const srStr = sr
+      ? new Date(sr).toLocaleTimeString("pt-BR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "-";
+    const ssStr = ss
+      ? new Date(ss).toLocaleTimeString("pt-BR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "-";
+    detail.style.display = "none";
+    detail.innerHTML = `
+      <div class="row"><span>Chuva</span><strong>${round(
+        pSum
+      )} mm</strong></div>
+      <div class="row"><span>UV</span><strong>${
+        uv != null ? round(uv) : "-"
+      }</strong></div>
+      <div class="row"><span>Sensação</span><strong>${
+        apMean != null ? `${apMean}°` : "-"
+      }</strong></div>
+      <div class="row"><span>Nascer</span><strong>${srStr}</strong></div>
+      <div class="row"><span>Pôr</span><strong>${ssStr}</strong></div>
+    `;
+    dayEl.appendChild(detail);
+    dayEl.addEventListener("click", () => {
+      const open = dayEl.classList.toggle("open");
+      detail.style.display = open ? "grid" : "none";
+    });
     weeklyContainer.appendChild(dayEl);
+    maxes.push(daily.temperature_2m_max[i]);
   }
   if (
     Array.isArray(weather.daily.uv_index_max) &&
@@ -137,8 +189,63 @@ function renderWeekly(weather) {
   ) {
     uvIndexEl.textContent = `${round(weather.daily.uv_index_max[0])}`;
   }
+  highlightExtremes();
+  renderSparkline(spark, maxes);
 }
 
+function computeDailyProbability(weather, dayIndex) {
+  const day = new Date(weather.daily.time[dayIndex]);
+  const key = `${day.getFullYear()}-${day.getMonth()}-${day.getDate()}`;
+  const hourly = weather.hourly;
+  let maxProb = 0;
+  for (let i = 0; i < hourly.time.length; i++) {
+    const t = new Date(hourly.time[i]);
+    const k = `${t.getFullYear()}-${t.getMonth()}-${t.getDate()}`;
+    if (k === key) {
+      const p = hourly.precipitation_probability[i] ?? 0;
+      if (p > maxProb) maxProb = p;
+    }
+  }
+  return round(maxProb);
+}
+
+function highlightExtremes() {
+  const items = [...weeklyContainer.querySelectorAll(".day-weather-item")];
+  const values = items.map((el) => {
+    const maxText = el.querySelector("div > p:first-child").textContent;
+    return parseInt(maxText);
+  });
+  let maxIdx = 0;
+  let minIdx = 0;
+  for (let i = 1; i < values.length; i++) {
+    if (values[i] > values[maxIdx]) maxIdx = i;
+    if (values[i] < values[minIdx]) minIdx = i;
+  }
+  items[maxIdx]?.classList.add("hot-day");
+  items[minIdx]?.classList.add("cold-day");
+}
+
+function renderSparkline(container, values) {
+  if (!values || values.length === 0) return;
+  const w = container.clientWidth || 600;
+  const h = 40;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const xStep = w / (values.length - 1 || 1);
+  const points = values.map((v, i) => {
+    const y = h - ((v - min) / (max - min || 1)) * (h - 6) - 3;
+    const x = i * xStep;
+    return `${x},${y}`;
+  });
+  const svg = `
+    <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+      <polyline points="${points.join(
+        " "
+      )}" fill="none" stroke="#23aaff" stroke-width="2"/>
+    </svg>
+  `;
+  container.innerHTML = svg;
+}
 async function searchAndRender(name) {
   try {
     document.body.setAttribute("aria-busy", "true");

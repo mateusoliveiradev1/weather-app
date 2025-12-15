@@ -163,10 +163,18 @@ body {
   gap: 30px;
 }
 
+.sparkline {
+  width: 100%;
+  height: 40px;
+}
+
 .weekly-forecast-container .day-weather-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: relative;
+  border-radius: 24px;
+  padding: 8px 12px;
 }
 
 .weekly-forecast-container .day-weather-item > p,
@@ -199,6 +207,51 @@ body {
 .weekly-forecast-container .day-weather-item > img {
   height: 60px;
   width: 60px;
+}
+
+.prob-badge {
+  position: absolute;
+  right: 16px;
+  top: 12px;
+  background: #e2f2ff;
+  color: #108de0;
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.day-detail {
+  display: none;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px 16px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: #f8fbff;
+  border-radius: 16px;
+}
+.day-detail .row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #2a394f;
+}
+.day-detail .row > span {
+  color: #8f8f8f;
+}
+.day-detail .row > strong {
+  color: #2a394f;
+}
+
+.day-weather-item.open {
+  background: #f3f7fb;
+}
+.day-weather-item.hot-day {
+  outline: 2px solid #ff8266;
+}
+.day-weather-item.cold-day {
+  outline: 2px solid #66a0ff;
 }
 
 /* Utility classes */

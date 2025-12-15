@@ -103,4 +103,15 @@
   .weekly-forecast-container .day-weather-item > div > p:last-child {
     font-size: 0.875rem;
   }
+  .prob-badge {
+    top: 8px;
+    right: 12px;
+    font-size: 0.7rem;
+  }
+  .sparkline {
+    height: 36px;
+  }
+  .day-detail {
+    grid-template-columns: 100%;
+  }
 }
