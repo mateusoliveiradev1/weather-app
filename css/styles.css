@@ -25,6 +25,7 @@ body {
 .navbar-container {
   display: flex;
   align-items: center;
+  position: relative;
 }
 
 .navbar-container > img {
@@ -216,4 +217,44 @@ body {
 
 .custom-input::placeholder {
   color: #b1b8c0;
+}
+
+.autocomplete-list {
+  position: absolute;
+  top: 60px;
+  left: 0;
+  right: 0;
+  background-color: #ffffff;
+  border-radius: 15px;
+  box-shadow: 0px 12px 30px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  z-index: 10;
+  display: none;
+}
+
+.autocomplete-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.autocomplete-item:hover,
+.autocomplete-item.active {
+  background-color: #f3f7fb;
+}
+
+.autocomplete-item .label {
+  color: #2a394f;
+  font-weight: 600;
+}
+
+.autocomplete-item .meta {
+  color: #8f8f8f;
+  font-weight: 500;
 }

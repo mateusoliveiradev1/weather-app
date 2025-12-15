@@ -14,6 +14,9 @@
     margin-right: 0px;
     margin-bottom: 10px;
   }
+  .autocomplete-list {
+    top: 50px;
+  }
 
   .showcase-cantainer {
     justify-content: space-between;
