@@ -456,9 +456,13 @@ async function geocodeSuggest(q) {
   const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
     q
   )}&count=10&language=pt&format=json`;
-  const res = await fetch(url);
-  if (!res.ok) return [];
-  const data = await res.json();
+  let data;
+  try {
+    data = await fetchJSONWithRetry(url, 3, 300);
+  } catch (e) {
+    showToast("Falha ao buscar sugestões. Tentando novamente mais tarde.");
+    return [];
+  }
   const list = Array.isArray(data.results) ? data.results : [];
   cache.set(key, { ts: now, list });
   return list;
