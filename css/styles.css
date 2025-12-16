@@ -168,6 +168,21 @@ body {
   height: 40px;
 }
 
+.toast {
+  position: fixed;
+  left: 50%;
+  top: 16px;
+  transform: translateX(-50%);
+  background: #2a394f;
+  color: #ffffff;
+  padding: 10px 14px;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  font-weight: 500;
+  z-index: 1000;
+  display: none;
+}
+
 .weekly-forecast-container .day-weather-item {
   display: flex;
   align-items: center;

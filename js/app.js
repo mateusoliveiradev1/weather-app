@@ -11,11 +11,30 @@ const uvIndexEl = document.getElementById("uv-index");
 const weeklyContainer = document.getElementById("weekly-forecast");
 const autocompleteEl = document.getElementById("autocomplete");
 const STORAGE_KEY = "weather_app_city";
+const CITY_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 dias
 
 const img = (name) => `images/${name}`;
 const round = (n) => Math.round(n);
 const temp = (n) => `${round(n)}°`;
 const prob = (n) => `${round(n)}%`;
+
+async function fetchJSONWithRetry(url, attempts = 3, baseDelayMs = 300) {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Falha ao buscar: ${res.status}`);
+      return await res.json();
+    } catch (e) {
+      lastErr = e;
+      if (i < attempts - 1) {
+        const delay = baseDelayMs * Math.pow(2, i);
+        await new Promise((r) => setTimeout(r, delay));
+      }
+    }
+  }
+  throw lastErr || new Error("Falha ao buscar dados");
+}
 
 function describeCondition(probability, hour) {
   const h = typeof hour === "number" ? hour : new Date(hour).getHours();
@@ -47,9 +66,7 @@ async function geocodeCity(name) {
   const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
     name
   )}&count=1&language=pt&format=json`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Falha ao buscar localização");
-  const data = await res.json();
+  const data = await fetchJSONWithRetry(url, 3, 300);
   if (!data.results || data.results.length === 0)
     throw new Error("Cidade não encontrada");
   const r = data.results[0];
@@ -58,9 +75,7 @@ async function geocodeCity(name) {
 
 async function fetchWeather(lat, lon) {
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,precipitation,wind_speed_10m&hourly=temperature_2m,precipitation_probability,relative_humidity_2m&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,uv_index_max,precipitation_sum,sunrise,sunset&timezone=auto&windspeed_unit=kmh`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Falha ao buscar clima");
-  return res.json();
+  return fetchJSONWithRetry(url, 3, 300);
 }
 
 function renderCurrent(name, weather) {
@@ -109,6 +124,8 @@ function renderHourly(weather) {
     if (items.length === 6) break;
   }
   let maxProbNext = 0;
+  let minTempNext = Infinity;
+  let maxTempNext = -Infinity;
   items.forEach((idx) => {
     const t = new Date(hourly.time[idx]);
     const diffMs = Math.abs(t.getTime() - now.getTime());
@@ -118,6 +135,9 @@ function renderHourly(weather) {
         : t.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
     const p = hourly.precipitation_probability[idx] ?? 0;
     if (p > maxProbNext) maxProbNext = p;
+    const tt = hourly.temperature_2m[idx];
+    if (tt < minTempNext) minTempNext = tt;
+    if (tt > maxTempNext) maxTempNext = tt;
     const item = document.createElement("div");
     item.className = "hour-weather-item";
     item.setAttribute("role", "listitem");
@@ -152,12 +172,18 @@ function renderHourly(weather) {
       : maxProbNext < 60
       ? "possibilidade moderada"
       : "alta chance de chuva";
-  chanceTextEl.textContent = `${chanceTextEl.textContent} • Próximas horas: ${nextSummary}`;
+  const amplitude =
+    isFinite(minTempNext) && isFinite(maxTempNext)
+      ? Math.max(0, round(maxTempNext - minTempNext))
+      : null;
+  const ampText = amplitude != null ? ` • Amplitude: ${amplitude}°` : "";
+  chanceTextEl.textContent = `${chanceTextEl.textContent} • Próximas horas: ${nextSummary}${ampText}`;
 }
 
 function renderWeekly(weather) {
   const daily = weather.daily;
   weeklyContainer.innerHTML = "";
+  weeklyContainer.setAttribute("role", "list");
   const spark = document.createElement("div");
   spark.className = "sparkline";
   weeklyContainer.appendChild(spark);
@@ -165,6 +191,7 @@ function renderWeekly(weather) {
   for (let i = 0; i < daily.time.length && i < 7; i++) {
     const dayEl = document.createElement("div");
     dayEl.className = "day-weather-item";
+    dayEl.setAttribute("role", "listitem");
     const nameEl = document.createElement("p");
     nameEl.textContent = weekdayName(daily.time[i]);
     const iconEl = document.createElement("img");
@@ -314,10 +341,21 @@ async function searchAndRender(name) {
     renderHourly(weather);
     renderWeekly(weather);
   } catch (e) {
-    alert(e.message || "Erro inesperado");
+    showToast(e.message || "Erro inesperado");
   } finally {
     document.body.removeAttribute("aria-busy");
   }
+}
+
+function showToast(message) {
+  const el = document.getElementById("toast");
+  if (!el) return;
+  el.textContent = message;
+  el.style.display = "block";
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => {
+    el.style.display = "none";
+  }, 5000);
 }
 
 cityInput.addEventListener("keydown", (e) => {
@@ -333,6 +371,10 @@ function getSavedCity() {
     if (!raw) return null;
     const obj = JSON.parse(raw);
     if (!obj || !obj.latitude || !obj.longitude || !obj.name) return null;
+    if (obj.expiresAt && Date.now() > obj.expiresAt) {
+      localStorage.removeItem(STORAGE_KEY);
+      return null;
+    }
     return obj;
   } catch {
     return null;
@@ -349,6 +391,7 @@ function saveCity(place) {
         longitude: place.longitude,
         admin1: place.admin1 || null,
         country_code: place.country_code || null,
+        expiresAt: Date.now() + CITY_TTL_MS,
       })
     );
   } catch {}
@@ -394,6 +437,7 @@ function parseQuery(q) {
 }
 
 const cache = new Map();
+const SUGGEST_TTL_MS = 30 * 60 * 1000; // 30min
 function debounce(fn, ms) {
   let t;
   return (...args) => {
@@ -404,7 +448,11 @@ function debounce(fn, ms) {
 
 async function geocodeSuggest(q) {
   const key = `s:${q}`;
-  if (cache.has(key)) return cache.get(key);
+  const now = Date.now();
+  if (cache.has(key)) {
+    const cached = cache.get(key);
+    if (cached && now - cached.ts < SUGGEST_TTL_MS) return cached.list;
+  }
   const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
     q
   )}&count=10&language=pt&format=json`;
@@ -412,7 +460,7 @@ async function geocodeSuggest(q) {
   if (!res.ok) return [];
   const data = await res.json();
   const list = Array.isArray(data.results) ? data.results : [];
-  cache.set(key, list);
+  cache.set(key, { ts: now, list });
   return list;
 }
 
@@ -467,7 +515,7 @@ async function renderByPlace(place) {
     renderHourly(weather);
     renderWeekly(weather);
   } catch (e) {
-    alert(e.message || "Erro inesperado");
+    showToast(e.message || "Erro inesperado");
   } finally {
     document.body.removeAttribute("aria-busy");
   }

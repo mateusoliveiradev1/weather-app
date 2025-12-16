@@ -45,7 +45,9 @@
         <div class="showcase-cantainer">
           <div class="showcase-text">
             <h2 id="city-name">Pirangi</h2>
-            <p id="chance-text">Chance de chuva 0%</p>
+            <p id="chance-text" role="status" aria-live="polite">
+              Chance de chuva 0%
+            </p>
             <h2 id="current-temp">28°</h2>
           </div>
 
@@ -97,6 +99,7 @@
         <div id="weekly-forecast" class="weekly-forecast-container"></div>
       </aside>
     </main>
+    <div id="toast" class="toast" aria-live="assertive" role="alert"></div>
     <script defer src="js/app.js"></script>
   </body>
 </html>
