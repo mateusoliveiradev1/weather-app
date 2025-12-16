@@ -208,6 +208,9 @@ body {
 .weekly-forecast-container .day-weather-item > img {
   height: 60px;
   width: 60px;
+  flex: 0 0 60px;
+  min-width: 60px;
+  object-fit: contain;
 }
 
 .prob-badge {

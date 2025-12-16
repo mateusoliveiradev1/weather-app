@@ -17,11 +17,22 @@ const round = (n) => Math.round(n);
 const temp = (n) => `${round(n)}°`;
 const prob = (n) => `${round(n)}%`;
 
+function describeCondition(probability, hour) {
+  const h = typeof hour === "number" ? hour : new Date(hour).getHours();
+  const night = h < 6 || h >= 18;
+  if (probability >= 80) return "Chuvoso";
+  if (probability >= 60) return "Nublado";
+  if (probability >= 20)
+    return night ? "Parcialmente nublado" : "Parcialmente nublado";
+  return night ? "Céu limpo" : "Limpo";
+}
+
 function iconFor(probability, hour) {
   const h = typeof hour === "number" ? hour : new Date(hour).getHours();
   const night = h < 6 || h >= 18;
   if (probability >= 80) return img("rain-2.svg");
-  if (probability >= 60) return img("clouds.svg");
+  if (probability >= 60)
+    return night ? img("moon-clouds.svg") : img("sun-clouds.svg");
   if (probability >= 20)
     return night ? img("moon-clouds.svg") : img("sun-clouds.svg");
   return night ? img("moon-clouds.svg") : img("sun.svg");
@@ -63,17 +74,33 @@ function renderCurrent(name, weather) {
       ? hourly.precipitation_probability[nowIndex]
       : 0;
   cityNameEl.textContent = name;
-  chanceTextEl.textContent = `Chance de chuva ${prob(currentProb)}`;
+  const updated = new Date(current.time).toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const condLabel = describeCondition(currentProb, current.time);
+  const delta = round(current.apparent_temperature - current.temperature_2m);
+  const sens =
+    delta === 0
+      ? "igual à temperatura"
+      : delta > 0
+      ? `+${delta}° mais quente`
+      : `${delta}° mais fria`;
+  chanceTextEl.textContent = `Chance de chuva: ${prob(
+    currentProb
+  )} • Atualizado às ${updated} • ${condLabel} • Sensação: ${sens}`;
   currentTempEl.textContent = temp(current.temperature_2m);
   currentIconEl.src = iconFor(currentProb, current.time);
   apparentTempEl.textContent = temp(current.apparent_temperature);
   chanceDetailEl.textContent = prob(currentProb);
-  windSpeedEl.innerHTML = `${round(current.wind_speed_10m)} <span>km/h</span>`;
+  const wind = round(current.wind_speed_10m);
+  windSpeedEl.innerHTML = wind < 1 ? `Calmo` : `${wind} <span>km/h</span>`;
 }
 
 function renderHourly(weather) {
   const hourly = weather.hourly;
   hourlyContainer.innerHTML = "";
+  hourlyContainer.setAttribute("role", "list");
   const now = new Date();
   const items = [];
   for (let i = 0; i < hourly.time.length; i++) {
@@ -81,26 +108,51 @@ function renderHourly(weather) {
     if (t >= now) items.push(i);
     if (items.length === 6) break;
   }
+  let maxProbNext = 0;
   items.forEach((idx) => {
-    const timeStr = new Date(hourly.time[idx]).toLocaleTimeString("pt-BR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const t = new Date(hourly.time[idx]);
+    const diffMs = Math.abs(t.getTime() - now.getTime());
+    const timeStr =
+      diffMs < 60 * 60 * 1000
+        ? "Agora"
+        : t.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
     const p = hourly.precipitation_probability[idx] ?? 0;
+    if (p > maxProbNext) maxProbNext = p;
     const item = document.createElement("div");
     item.className = "hour-weather-item";
+    item.setAttribute("role", "listitem");
     const timeEl = document.createElement("p");
     timeEl.textContent = timeStr;
     const iconEl = document.createElement("img");
     iconEl.src = iconFor(p, hourly.time[idx]);
     iconEl.alt = "Condição";
+    iconEl.loading = "lazy";
+    iconEl.decoding = "async";
+    iconEl.width = 50;
+    iconEl.height = 50;
+    iconEl.onerror = () => {
+      iconEl.src = img("sun-clouds.svg");
+    };
     const tempEl = document.createElement("p");
     tempEl.textContent = temp(hourly.temperature_2m[idx]);
+    const rh = hourly.relative_humidity_2m
+      ? hourly.relative_humidity_2m[idx]
+      : null;
+    item.title = rh != null ? `Umidade ${round(rh)}%` : `Umidade —`;
     item.appendChild(timeEl);
     item.appendChild(iconEl);
     item.appendChild(tempEl);
     hourlyContainer.appendChild(item);
   });
+  const nextSummary =
+    maxProbNext === 0
+      ? "sem chuva prevista"
+      : maxProbNext < 20
+      ? "baixa probabilidade"
+      : maxProbNext < 60
+      ? "possibilidade moderada"
+      : "alta chance de chuva";
+  chanceTextEl.textContent = `${chanceTextEl.textContent} • Próximas horas: ${nextSummary}`;
 }
 
 function renderWeekly(weather) {
@@ -119,6 +171,13 @@ function renderWeekly(weather) {
     const probApprox = computeDailyProbability(weather, i);
     iconEl.src = iconFor(probApprox, 12);
     iconEl.alt = "Condição";
+    iconEl.width = 60;
+    iconEl.height = 60;
+    iconEl.loading = "lazy";
+    iconEl.decoding = "async";
+    iconEl.onerror = () => {
+      iconEl.src = img("sun-clouds.svg");
+    };
     const tempsEl = document.createElement("div");
     const maxEl = document.createElement("p");
     maxEl.textContent = temp(daily.temperature_2m_max[i]);
